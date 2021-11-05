@@ -1,0 +1,23 @@
+{
+  "name": "tiochan",
+  "version": "1.0.0",
+  "description": "Tio Chan as QQ robot",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RedContritio/TioChan.git"
+  },
+  "author": "RedContritio",
+  "license": "LGPL-2.1",
+  "bugs": {
+    "url": "https://github.com/RedContritio/TioChan/issues"
+  },
+  "homepage": "https://github.com/RedContritio/TioChan#readme",
+  "dependencies": {
+    "oicq": "^1.21.2"
+  }
+}
