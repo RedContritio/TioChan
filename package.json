@@ -6,7 +6,10 @@
   "scripts": {
     "build": "tsc",
     "start": "tsc && node ./dist/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "docker:build": "docker build -t tiochan . -f build/Dockerfile",
+    "docker:run": "docker run -it tiochan",
+    "docker:deploy": "docker run -d tiochan"
   },
   "repository": {
     "type": "git",
