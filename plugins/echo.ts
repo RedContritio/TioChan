@@ -1,14 +1,12 @@
-"use strict"
-const { segment } = require("oicq")
-const { bot } = require("../index")
-const { master } = require("../config");
-const LocalStorage = require("../utils/localstorage")
+import { segment } from "oicq";
+import { bot } from "../index";
+import { master } from "../config";
+import { LocalStorage } from "../utils/localstorage";
 
 const ls_key = 'group_echo';
-const group_echo = LocalStorage.get(ls_key);
+const group_echo: { [key: number] : boolean } = LocalStorage.get(ls_key);
 
-const echo_match = (s) => {
-    // console.log('reply to ', s);
+const echo_match = (s: string) => {
     return s.slice(5);
 }
 

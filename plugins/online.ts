@@ -1,5 +1,4 @@
-"use strict"
-const { bot } = require("../index")
+import { bot } from "../index"
 
 bot.on("system.online", function () {
 	// 你的账号已上线，你可以做任何事

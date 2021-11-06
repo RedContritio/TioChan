@@ -1,24 +1,23 @@
-"use strict"
-const fs = require('fs');
-const path = require('path');
-const md5 = require('md5');
-const { uin } = require('../config');
+import fs from 'fs';
+import path from 'path';
+import md5 from 'md5';
+import { uin } from '../config';
 
-class LocalStorage {
+export class LocalStorage {
     static basedir = path.join('data', 'localstorage');
     static create_dir() {
         if(!fs.existsSync(this.basedir))
             fs.mkdirSync(this.basedir);
     }
 
-    static get(key, def = {}) {
+    static get(key: string, def: any = {}): any {
         try {
             const filename = md5(key) + '.json';
             const filepath = path.join(LocalStorage.basedir, filename);
-            if(!fs.existsSync(path))
+            if(!fs.existsSync(filepath))
                 return def;
-            const buffer = fs.readFileSync(filepath);
-            const obj = JSON.parse(buffer);
+            const buffer: Buffer = fs.readFileSync(filepath);
+            const obj = JSON.parse(buffer.toString('utf-8'));
             return obj;
         } catch (error) {
             console.log(error);
@@ -26,7 +25,7 @@ class LocalStorage {
         }
     }
 
-    static set(key, obj) {
+    static set(key: string, obj: any): void {
         try {
             LocalStorage.create_dir();
             const filename = md5(key) + '.json';
@@ -38,5 +37,3 @@ class LocalStorage {
         console.log(JSON.stringify(obj));
     }
 }
-
-module.exports = LocalStorage;

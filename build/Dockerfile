@@ -3,18 +3,25 @@ ENTRYPOINT []
 
 WORKDIR /root/tiochan/
 
-RUN sed -i s@/deb.debian.org/@/mirrors.tuna.tsinghua.edu.cn/@g /etc/apt/sources.list && \
-    sed -i s@/security.debian.org/@/mirrors.tuna.tsinghua.edu.cn/@g /etc/apt/sources.list && \
+RUN sed -i s@/deb.debian.org/@/mirrors.cloud.tencent.com/@g /etc/apt/sources.list && \
+    sed -i s@/security.debian.org/@/mirrors.cloud.tencent.com/@g /etc/apt/sources.list && \
     apt-get update && \
     apt-get install -qq -y nodejs && \
     apt-get install -qq -y npm
 
-RUN npm config set registry https://registry.npm.taobao.org && \
+# 无敌，腾讯云 https://mirrors.cloud.tencent.com/
+ENV N_NODE_MIRROR=https://mirrors.cloud.tencent.com/nodejs-release/
+
+RUN npm config set registry http://mirrors.cloud.tencent.com/npm/ && \
     npm install -g n && \
-    n lts
+    n lts && \
+    export PATH="$PATH"
+
+RUN npm install -g typescript
 
 COPY . .
 
 RUN npm install
 
 CMD ["npm", "start"]
+# CMD ["bash"]
