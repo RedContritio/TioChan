@@ -1,18 +1,17 @@
 "use strict"
 const { createClient } = require("oicq")
+const { uin } = require("./config");
 
-const account = 2829619622
-
-const bot = createClient(account)
+const bot = createClient(uin)
 
 bot
-.on("system.login.qrcode", function (e) {
-	this.logger.mark("扫码后按Enter完成登录")
-	process.stdin.once("data", () => {
-		this.login()
+	.on("system.login.qrcode", function (e) {
+		this.logger.mark("扫码后按Enter完成登录")
+		process.stdin.once("data", () => {
+			this.login()
+		})
 	})
-})
-.login()
+	.login()
 
 exports.bot = bot
 

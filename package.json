@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/RedContritio/TioChan#readme",
   "dependencies": {
+    "md5": "^2.3.0",
     "oicq": "^1.21.2"
   }
 }
