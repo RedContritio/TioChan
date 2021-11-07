@@ -19,13 +19,6 @@ import './plugins/echo';
 import './plugins/request';
 import './plugins/online';
 
-// template plugins
-// require("./plugins/hello") //hello world
-// require("./plugins/image") //发送图文和表情
-// require("./plugins/echo") //发送图文和表情
-// require("./plugins/request") //加群和好友
-// require("./plugins/online") //监听上线事件
-
 process.on("unhandledRejection", (reason, promise) => {
 	console.log('Unhandled Rejection at:', promise, 'reason:', reason)
 })
