@@ -1,6 +1,4 @@
-import { accessSync } from "fs";
 import { LocalStorage } from "node-localstorage";
-import path from "path";
 
 const BASE_DIR = './data/group_switch';
 
