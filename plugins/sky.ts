@@ -75,7 +75,7 @@ async function fetchArticleMetaData(callback: (article: ArticleMeta | null) => v
     });
 }
 
-async function fetchTodayArticle(article_id: string, callback: (() => void) | null = null) {
+async function fetchTodayArticle(article_id: string, callback: ((succ: boolean) => void) | null = null) {
     const article_url = config.article_url_prefix + article_id;
     const get_figcaption_text = (e: HTMLElement) => e.querySelector('figcaption')?.text;
     const figure2imagedata = (e: HTMLElement): ImageShowData => {
@@ -133,7 +133,13 @@ async function fetchTodayArticle(article_id: string, callback: (() => void) | nu
             
             if(callback != null)
             {
-                callback();
+                callback(true);
+            }
+        }
+        else {
+            if(callback != null)
+            {
+                callback(false);
             }
         }
     });
@@ -181,16 +187,19 @@ function replyHelp(msg: CommonMessageEventData): void {
     msg.reply(rep);
 }
 
-function SkyEntry(msg: CommonMessageEventData): void {
+function SkyEntry(msg: CommonMessageEventData, normal: boolean = true): void {
     if(msg.raw_message.includes('#光遇')) {
-        if(msg.raw_message.includes('#大蜡烛') || msg.raw_message.includes('#蜡烛堆')) {
+        if(normal && msg.raw_message.includes('#大蜡烛') || msg.raw_message.includes('#蜡烛堆')) {
             replyCakes(msg);
         }
-        else if(msg.raw_message.includes('#季节蜡烛') || msg.raw_message.includes('#系蜡')) {
+        else if(normal && msg.raw_message.includes('#季节蜡烛') || msg.raw_message.includes('#系蜡')) {
             replySeasonCandle(msg);
         }
-        else if(msg.raw_message.includes('#每日任务') || msg.raw_message.includes('#任务')) {
+        else if(normal && msg.raw_message.includes('#每日任务') || msg.raw_message.includes('#任务')) {
             replyTasks(msg);
+        }
+        else if (!normal) {
+            msg.reply('数据源还没有更新，饭后再来看看吧');
         }
         else {
             replyHelp(msg);
@@ -205,7 +214,7 @@ function CheckUpdateEntry(msg: CommonMessageEventData): void {
         || cached_data.date != now.getDate()) {
         fetchArticleMetaData((a) => {
             if (a) {
-                fetchTodayArticle(a.id.toString(), () => SkyEntry(msg));
+                fetchTodayArticle(a.id.toString(), (succ) => SkyEntry(msg, succ));
             }
         });
     } else {
