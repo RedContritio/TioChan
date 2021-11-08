@@ -7,6 +7,7 @@ import { segment, cqcode, CommonMessageEventData, PrivateMessageEventData, Group
 import { get_group_switch, set_group_switch } from "../utils/group_switch";
 import { bot } from '..';
 import { master } from '../config';
+import { LocalStorage } from 'node-localstorage';
 
 const ls_key = 'sky163';
 
@@ -28,12 +29,25 @@ class DailyContent {
     tasks: ImageShowData | undefined = undefined;
 }
 
-const cached_data = {
-    month: -1,
-    date: -1,
-    daily_content: new DailyContent(),
-};
 
+const CACHE_DIR = './data/cache';
+
+const storage: LocalStorage = new LocalStorage(CACHE_DIR);
+
+class CachedData {
+    month: number = -1;
+    date: number = -1;
+    daily_content: DailyContent = new DailyContent();
+}
+
+function InitialCacheRead(): CachedData {
+    const s = storage.getItem(ls_key);
+    if(s == null)
+        return new CachedData();
+    return JSON.parse(s);
+}
+
+let cached_data: CachedData = InitialCacheRead();
 
 const article_meta_url: string = config.article_meta_url_prefix + config.article_up_id;
 
@@ -87,12 +101,14 @@ async function fetchTodayArticle(article_id: string, callback: (() => void) | nu
             // console.log(article?.text);
             // console.log(constCake && constCake.length > 0 ? constCake[0].text : '');
 
-            CandlesCake?.forEach((v: HTMLElement) => {
-                console.log(get_figcaption_text(v));
-                console.log(v.querySelector('img')?.getAttribute('data-src'));
-            });
+            // CandlesCake?.forEach((v: HTMLElement) => {
+            //     console.log(get_figcaption_text(v));
+            //     console.log(v.querySelector('img')?.getAttribute('data-src'));
+            // });
 
             if (Tasks != null && Tasks.length >= 1) {
+                cached_data = new CachedData();
+
                 cached_data.daily_content.randomCakes = undefined;
                 cached_data.daily_content.seasonCandle = undefined;
                 cached_data.daily_content.tasks = undefined;
@@ -109,6 +125,9 @@ async function fetchTodayArticle(article_id: string, callback: (() => void) | nu
                 const now: Date = new Date(Date.now());
                 cached_data.month = now.getMonth() + 1;
                 cached_data.date = now.getDate();
+
+                storage.setItem(ls_key, JSON.stringify(cached_data));
+                // console.log('update');
             }
             // console.log(cached_data.daily_content);
             
