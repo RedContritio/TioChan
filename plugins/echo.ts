@@ -26,9 +26,9 @@ bot.on("message.group", function (msg: GroupMessageEventData) {
         echo(msg);
     }
     if (msg.sender.user_id == master) {
-        if(msg.raw_message == '@echo on') {
+        if(msg.raw_message == ':echo on') {
             set_group_switch(msg.group_id, ls_key, true);
-        } else if(msg.raw_message == '@echo off') {
+        } else if(msg.raw_message == ':echo off') {
             set_group_switch(msg.group_id, ls_key, false);
         }
     }
