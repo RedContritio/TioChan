@@ -5,7 +5,7 @@
   "main": "index.ts",
   "scripts": {
     "build": "tsc",
-    "start": "tsc && node ./dist/index.js",
+    "start": "ts-node ./index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "docker:build": "docker build -t tiochan . -f build/Dockerfile",
     "docker:run": "docker run -it tiochan",

@@ -17,7 +17,8 @@ RUN npm config set registry http://mirrors.cloud.tencent.com/npm/ && \
     n lts && \
     export PATH="$PATH"
 
-RUN npm install -g typescript
+RUN npm install -g typescript && \
+    npm install -g ts-node
 
 COPY . .
 
