@@ -21,9 +21,3 @@ bot.on("message.group", function (msg: GroupMessageEventData) {
 		// msg.member.poke()
 	}
 })
-
-// 接收戳一戳
-bot.on("notice.group.poke", function (e: GroupPokeEventData) {
-	if (e.target_id === this.uin)
-		this.sendGroupMsg(e.group_id, '别戳了别戳了')
-})

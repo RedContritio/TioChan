@@ -25,6 +25,7 @@ import './plugins/echo';
 import './plugins/request';
 import './plugins/online';
 import './plugins/sky';
+import './plugins/poke';
 
 process.on("unhandledRejection", (reason, promise) => {
 	console.log('Unhandled Rejection at:', promise, 'reason:', reason)
