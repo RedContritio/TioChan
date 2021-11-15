@@ -96,7 +96,7 @@ function parseTodayArticle2Cache(root: HTMLElement): boolean {
 function replyCakes(msg: CommonMessageEventData): void {
     let rep = '';
     if (cached_data.daily_content.constCakes) {
-        rep += dateformat(cached_data.date, 'MM月dd日\n');
+        rep += dateformat(cached_data.date, 'MM月dd日') + '\n';
         rep += cached_data.daily_content.constCakes + '\n';
         cached_data.daily_content.randomCakes?.forEach((cake: ImageShowData) => {
             rep += '\n';
@@ -110,7 +110,7 @@ function replyCakes(msg: CommonMessageEventData): void {
 function replySeasonCandle(msg: CommonMessageEventData): void {
     let rep = '';
     if (cached_data.daily_content.seasonCandle) {
-        rep += dateformat(cached_data.date, 'MM月dd日\n');
+        rep += dateformat(cached_data.date, 'MM月dd日') + '\n';
         rep += cached_data.daily_content.seasonCandle.title;
         rep += cqcode.image('http:' + cached_data.daily_content.seasonCandle.url);
     }
@@ -120,7 +120,7 @@ function replySeasonCandle(msg: CommonMessageEventData): void {
 function replyTasks(msg: CommonMessageEventData): void {
     let rep = '';
     if (cached_data.daily_content.tasks) {
-        rep += dateformat(cached_data.date, 'MM月dd日\n');
+        rep += dateformat(cached_data.date, 'MM月dd日') + '\n';
         rep += cached_data.daily_content.tasks.title;
         rep += cqcode.image('http:' + cached_data.daily_content.tasks.url);
     }
