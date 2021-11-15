@@ -1,6 +1,7 @@
-import { assert } from 'console';
-import request from 'request';
-import { ArticleMeta, BilibiliArticleMetaResponse } from '../utils/bilibili_interfaces';
+import { Article, ArticleMeta, IArticleMeta } from '../utils/bilibili_article_helper';
+
+import schedule from 'node-schedule';
+import dateformat from 'date-fns/format';
 
 import { parse, HTMLElement } from 'node-html-parser';
 import { segment, cqcode, CommonMessageEventData, PrivateMessageEventData, GroupMessageEventData } from 'oicq';
@@ -11,11 +12,7 @@ import { LocalStorage } from 'node-localstorage';
 
 const ls_key = 'sky163';
 
-const config = {
-    article_up_id: '672840385',
-    article_meta_url_prefix: 'https://api.bilibili.com/x/space/article?mid=',
-    article_url_prefix: 'https://www.bilibili.com/read/cv',
-};
+
 
 class ImageShowData {
     title: string | undefined = undefined;
@@ -35,48 +32,26 @@ const CACHE_DIR = './data/cache';
 const storage: LocalStorage = new LocalStorage(CACHE_DIR);
 
 class CachedData {
-    month: number = -1;
-    date: number = -1;
+    date: number = 0;
     daily_content: DailyContent = new DailyContent();
 }
 
 function InitialCacheRead(): CachedData {
     const s = storage.getItem(ls_key);
-    if(s == null)
+    if (s == null)
         return new CachedData();
     return JSON.parse(s);
 }
 
 let cached_data: CachedData = InitialCacheRead();
 
-const article_meta_url: string = config.article_meta_url_prefix + config.article_up_id;
+const config = {
+    article_up_id: '672840385',
+    article_meta_url_prefix: 'https://api.bilibili.com/x/space/article?mid=',
+    article_url_prefix: 'https://www.bilibili.com/read/cv',
+};
 
-async function fetchArticleMetaData(callback: (article: ArticleMeta | null) => void) {
-    const now: Date = new Date(Date.now());
-    const expect_title = `光遇国服每日任务蜡烛位置(${now.getMonth() + 1}月${now.getDate()}日)`;
-    // console.log(expect_title);
-    await request(article_meta_url, function (error, response, body) {
-        if (!error && response.statusCode == 200) {
-            const res: BilibiliArticleMetaResponse = JSON.parse(body);
-            const { data } = res;
-            const { articles } = data;
-            const valid = articles == null ? [] : articles.filter((p: ArticleMeta) => {
-                return p && p.title == expect_title;
-            });
-            assert(valid.length === 1);
-            if (valid.length >= 1) {
-                callback(valid[0]);
-            } else {
-                callback(null);
-            }
-        } else {
-            callback(null);
-        }
-    });
-}
-
-async function fetchTodayArticle(article_id: string, callback: ((succ: boolean) => void) | null = null) {
-    const article_url = config.article_url_prefix + article_id;
+function parseTodayArticle2Cache(root: HTMLElement): boolean {
     const get_figcaption_text = (e: HTMLElement) => e.querySelector('figcaption')?.text;
     const figure2imagedata = (e: HTMLElement): ImageShowData => {
         const showdata = new ImageShowData();
@@ -85,69 +60,43 @@ async function fetchTodayArticle(article_id: string, callback: ((succ: boolean) 
         return showdata;
     };
 
-    await request(article_url, function (error, response, body) {
-        if (!error && response.statusCode == 200) {
-            const root = parse(response.body);
-            const article = root.querySelector('#article-content');
+    const article = root.querySelector('#article-content');
 
-            const constCake = article?.querySelectorAll('p').filter((e: HTMLElement) => e.text.includes('固定位置'));
-            const figures = article?.querySelectorAll('figure');
+    const constCake = article?.querySelectorAll('p').filter((e: HTMLElement) => e.text.includes('固定位置'));
+    const figures = article?.querySelectorAll('figure');
 
-            const CandlesCake = figures?.filter((element: HTMLElement) => get_figcaption_text(element)?.includes('蜡烛堆'));
-            const SeasonCandle = figures?.filter((element: HTMLElement) => get_figcaption_text(element)?.includes('季节蜡烛'));
-            const Tasks = figures?.filter((element: HTMLElement) => get_figcaption_text(element)?.includes('今日任务'));
-            // const task_figure = figures?.filter((element: HTMLElement) => element.querySelector('figcaption') == )
-            // console.log(soup.select);
-            // console.log(article?.text);
-            // console.log(constCake && constCake.length > 0 ? constCake[0].text : '');
+    const CandlesCake = figures?.filter((element: HTMLElement) => get_figcaption_text(element)?.includes('蜡烛堆'));
+    const SeasonCandle = figures?.filter((element: HTMLElement) => get_figcaption_text(element)?.includes('季节蜡烛'));
+    const Tasks = figures?.filter((element: HTMLElement) => get_figcaption_text(element)?.includes('今日任务'));
 
-            // CandlesCake?.forEach((v: HTMLElement) => {
-            //     console.log(get_figcaption_text(v));
-            //     console.log(v.querySelector('img')?.getAttribute('data-src'));
-            // });
+    if (Tasks != null && Tasks.length >= 1) {
+        cached_data = new CachedData();
 
-            if (Tasks != null && Tasks.length >= 1) {
-                cached_data = new CachedData();
+        cached_data.daily_content.randomCakes = undefined;
+        cached_data.daily_content.seasonCandle = undefined;
+        cached_data.daily_content.tasks = undefined;
+        cached_data.daily_content.constCakes = undefined;
 
-                cached_data.daily_content.randomCakes = undefined;
-                cached_data.daily_content.seasonCandle = undefined;
-                cached_data.daily_content.tasks = undefined;
-                cached_data.daily_content.constCakes = undefined;
+        cached_data.daily_content.randomCakes = CandlesCake?.map(figure2imagedata);
+        if (constCake && constCake.length > 0)
+            cached_data.daily_content.constCakes = constCake[0].text.slice(2);
+        if (SeasonCandle && SeasonCandle.length > 0)
+            cached_data.daily_content.seasonCandle = figure2imagedata(SeasonCandle[0]);
+        if (Tasks && Tasks.length > 0)
+            cached_data.daily_content.tasks = figure2imagedata(Tasks[0]);
 
-                cached_data.daily_content.randomCakes = CandlesCake?.map(figure2imagedata);
-                if(constCake && constCake.length > 0)
-                    cached_data.daily_content.constCakes = constCake[0].text.slice(2);
-                if (SeasonCandle && SeasonCandle.length > 0)
-                    cached_data.daily_content.seasonCandle = figure2imagedata(SeasonCandle[0]);
-                if (Tasks && Tasks.length > 0)
-                    cached_data.daily_content.tasks = figure2imagedata(Tasks[0]);
+        cached_data.date = Date.now();
 
-                const now: Date = new Date(Date.now());
-                cached_data.month = now.getMonth() + 1;
-                cached_data.date = now.getDate();
-
-                storage.setItem(ls_key, JSON.stringify(cached_data));
-                // console.log('update');
-            }
-            // console.log(cached_data.daily_content);
-            
-            if(callback != null)
-            {
-                callback(true);
-            }
-        }
-        else {
-            if(callback != null)
-            {
-                callback(false);
-            }
-        }
-    });
+        storage.setItem(ls_key, JSON.stringify(cached_data));
+        return true;
+    }
+    return false;
 }
 
 function replyCakes(msg: CommonMessageEventData): void {
     let rep = '';
-    if(cached_data.daily_content.constCakes) {
+    if (cached_data.daily_content.constCakes) {
+        rep += dateformat(cached_data.date, 'MM月dd日\n');
         rep += cached_data.daily_content.constCakes + '\n';
         cached_data.daily_content.randomCakes?.forEach((cake: ImageShowData) => {
             rep += '\n';
@@ -160,7 +109,8 @@ function replyCakes(msg: CommonMessageEventData): void {
 
 function replySeasonCandle(msg: CommonMessageEventData): void {
     let rep = '';
-    if(cached_data.daily_content.seasonCandle) {
+    if (cached_data.daily_content.seasonCandle) {
+        rep += dateformat(cached_data.date, 'MM月dd日\n');
         rep += cached_data.daily_content.seasonCandle.title;
         rep += cqcode.image('http:' + cached_data.daily_content.seasonCandle.url);
     }
@@ -169,7 +119,8 @@ function replySeasonCandle(msg: CommonMessageEventData): void {
 
 function replyTasks(msg: CommonMessageEventData): void {
     let rep = '';
-    if(cached_data.daily_content.tasks) {
+    if (cached_data.daily_content.tasks) {
+        rep += dateformat(cached_data.date, 'MM月dd日\n');
         rep += cached_data.daily_content.tasks.title;
         rep += cqcode.image('http:' + cached_data.daily_content.tasks.url);
     }
@@ -177,56 +128,82 @@ function replyTasks(msg: CommonMessageEventData): void {
 }
 
 function replyHelp(msg: CommonMessageEventData): void {
-    const rep = 
-`是光遇小助手缇欧哒！
+    const { date } = cached_data; 
+    const timestr = dateformat(date, 'yyyy-MM-dd HH:mm:ss');
+    const rep =
+        `是光遇小助手缇欧哒！
 说“#光遇”即可唤醒；
 支持的功能：
 #大蜡烛
 #季节蜡烛
-#每日任务`;
+#每日任务
+
+最近缓存于 ${timestr}`;
+
     msg.reply(rep);
 }
 
-function SkyEntry(msg: CommonMessageEventData, normal: boolean = true): void {
-    if(msg.raw_message.includes('#光遇')) {
-        if(normal && msg.raw_message.includes('#大蜡烛') || msg.raw_message.includes('#蜡烛堆')) {
-            replyCakes(msg);
+function SkyEntry(msg: CommonMessageEventData): void {
+    const content: string = msg.raw_message;
+    try {
+        if (content.includes('#光遇')) {
+            if (content.includes('#大蜡烛') || content.includes('#蜡烛堆')) {
+                replyCakes(msg);
+            }
+            else if (content.includes('#季节蜡烛') || content.includes('#季蜡')) {
+                replySeasonCandle(msg);
+            }
+            else if (content.includes('#每日任务') || content.includes('#任务') || content.includes('#今日任务')) {
+                replyTasks(msg);
+            }
+            else {
+                replyHelp(msg);
+            }
         }
-        else if(normal && msg.raw_message.includes('#季节蜡烛') || msg.raw_message.includes('#系蜡')) {
-            replySeasonCandle(msg);
-        }
-        else if(normal && msg.raw_message.includes('#每日任务') || msg.raw_message.includes('#任务')) {
-            replyTasks(msg);
-        }
-        else if (!normal) {
-            msg.reply('数据源还没有更新，饭后再来看看吧');
-        }
-        else {
-            replyHelp(msg);
-        }
+    } catch (exception) {
+        msg.reply(`[Exception]\n${exception}`);
+    }
+}
+
+async function CheckUpdate() {
+    const prev: Date = new Date(cached_data.date);
+    const now: Date = new Date(Date.now());
+    if (cached_data.daily_content.tasks === undefined
+        || prev.getMonth() != now.getMonth()
+        || prev.getDate() != now.getDate()) {
+
+        const article_up_id = '672840385';
+        const expect_title = `光遇国服每日任务蜡烛位置(${now.getMonth() + 1}月${now.getDate()}日)`;
+
+        await ArticleMeta.fetch(article_up_id, (article: IArticleMeta) => article.title == expect_title).then(
+            (article: IArticleMeta) => {
+                const id = article.id.toString();
+                Article.fetch(id).then(
+                    (root: HTMLElement) => {
+                        parseTodayArticle2Cache(root);
+                        console.log('sky: parsed succeed.');
+                    },
+                    (reason) => {
+                        console.error(`sky: Failed in fetch article because ${reason}`);
+                    }
+                );
+            },
+            (reason) => {
+                console.error(`sky: Failed in fetch article meta because ${reason}`);
+            }
+        );
     }
 }
 
 function CheckUpdateEntry(msg: CommonMessageEventData): void {
-    const now: Date = new Date(Date.now());
-    if (cached_data.daily_content.tasks === undefined
-        || cached_data.month != now.getMonth() + 1
-        || cached_data.date != now.getDate()) {
-        fetchArticleMetaData((a) => {
-            if (a) {
-                fetchTodayArticle(a.id.toString(), (succ) => SkyEntry(msg, succ));
-            }
-        });
-    } else {
-        SkyEntry(msg);
-    }
+    CheckUpdate();
+
+    SkyEntry(msg);
 }
 
-// fetchArticleMetaData((a) => {
-//     if (a) {
-//         fetchTodayArticle(a.id.toString());
-//     }
-// });
+const UpdateJob = schedule.scheduleJob('sky163_update', '* 0 * * * *', () => {
+    CheckUpdate();
+});
 
 bot.on('message.private', function (msg: PrivateMessageEventData) {
     CheckUpdateEntry(msg);
@@ -238,9 +215,11 @@ bot.on("message.group", function (msg: GroupMessageEventData) {
         CheckUpdateEntry(msg);
     }
     if (msg.sender.user_id == master) {
-        if(msg.raw_message.includes(':sky on')) {
+        const content: string = msg.raw_message;
+
+        if (content.includes(':sky on')) {
             set_group_switch(msg.group_id, ls_key, true);
-        } else if(msg.raw_message.includes(':sky off')) {
+        } else if (content.includes(':sky off')) {
             set_group_switch(msg.group_id, ls_key, false);
         }
     }
