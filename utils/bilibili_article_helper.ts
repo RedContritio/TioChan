@@ -2,6 +2,7 @@ import { rejects } from 'assert';
 import { resolve } from 'path/posix';
 import request from 'request';
 import { parse, HTMLElement } from 'node-html-parser';
+import { fetch_raw, fetch_page } from './html_fetch';
 
 export interface IBilibiliArticleMetaResponse {
     code: number;
@@ -139,24 +140,16 @@ export class ArticleMeta {
 
         const url = `${config.article_meta_url_prefix}${up_id}`;
         
-        return new Promise((resolve, reject) => {
-            request(url, function (error, response, body) {
-                if (!error && response.statusCode == 200) {
-                    try {
-                        const res: IBilibiliArticleMetaResponse = JSON.parse(body);
-                        const { data } = res;
-                        const { articles } = data;
-                        const valid = articles == null ? [] : articles.filter(predicate);
+        return fetch_raw(url).then(
+            (body: any) => {
+                const res: IBilibiliArticleMetaResponse = JSON.parse(body);
+                const { data } = res;
+                const { articles } = data;
+                const valid = articles == null ? [] : articles.filter(predicate);
 
-                        resolve(valid[0]);
-                    } catch (e) {
-                        reject(e);
-                    }
-                } else {
-                    reject(`${error} ${response.statusCode}`);
-                }
-            });
-        });
+                return valid[0];
+            }
+        );
     }
 };
 
@@ -168,23 +161,8 @@ export class Article {
      * @param callback 参数为 null 表示发生了异常
      */
      static async fetch(article_id: string): Promise<HTMLElement> {
-
         const url = `${config.article_url_prefix}${article_id}`;
         
-        return new Promise((resolve, reject) => {
-            request(url, function (error, response, body) {
-                if (!error && response.statusCode == 200) {
-                    try {
-                        const root = parse(response.body);
-
-                        resolve(root);
-                    } catch (e) {
-                        reject(e);
-                    }
-                } else {
-                    reject(`${error} ${response.statusCode}`);
-                }
-            });
-        });
+        return fetch_page(url);
     }
 }

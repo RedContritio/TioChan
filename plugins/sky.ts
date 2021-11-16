@@ -156,6 +156,10 @@ function SkyEntry(msg: CommonMessageEventData): void {
             else if (content.includes('#每日任务') || content.includes('#任务') || content.includes('#今日任务')) {
                 replyTasks(msg);
             }
+            else if (content.includes('#强制更新') || content.includes('#更新')) {
+                cached_data.daily_content.tasks = undefined;
+                CheckUpdate();
+            }
             else {
                 replyHelp(msg);
             }
