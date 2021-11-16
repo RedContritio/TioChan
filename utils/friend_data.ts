@@ -14,7 +14,7 @@ export function get_friend_data(friend_uin: number, key: string, def: any = unde
     const dict = safe_get_friend_data(friend_uin);
 
     if(key in dict)
-        return JSON.parse(dict[key]);
+        return dict[key];
     return def;
 }
 

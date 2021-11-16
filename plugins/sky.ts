@@ -9,6 +9,7 @@ import { get_group_switch, set_group_switch } from "../utils/group_switch";
 import { bot } from '..';
 import { master } from '../config';
 import { LocalStorage } from 'node-localstorage';
+import { report_error } from '../utils/debug_message';
 
 const ls_key = 'sky163';
 
@@ -131,7 +132,7 @@ function replyHelp(msg: CommonMessageEventData): void {
     const { date } = cached_data; 
     const timestr = dateformat(date, 'yyyy-MM-dd HH:mm:ss');
     const rep =
-        `是光遇小助手缇欧哒！
+`是光遇小助手缇欧哒！
 说“#光遇”即可唤醒；
 支持的功能：
 #大蜡烛
@@ -169,40 +170,46 @@ function SkyEntry(msg: CommonMessageEventData): void {
     }
 }
 
+async function bilibili_update() {
+    const now: Date = new Date(Date.now());
+    const bilibili_article_up_id = '672840385';
+    const expect_title = `光遇国服每日任务蜡烛位置(${now.getMonth() + 1}月${now.getDate()}日)`;
+
+    return ArticleMeta.fetch(bilibili_article_up_id, (article: IArticleMeta) => article.title == expect_title).then(
+        (article: IArticleMeta) => {
+            const id = article.id.toString();
+            Article.fetch(id).then(
+                (root: HTMLElement) => {
+                    parseTodayArticle2Cache(root);
+                    console.log('sky: parsed succeed.');
+                },
+                (reason) => {
+                    console.error(`sky: Failed in fetch article because ${reason}`);
+                }
+            );
+        },
+        (reason) => {
+            console.error(`sky: Failed in fetch article meta because ${reason}`);
+        }
+    );
+}
+
 async function CheckUpdate() {
     const prev: Date = new Date(cached_data.date);
     const now: Date = new Date(Date.now());
     if (cached_data.daily_content.tasks === undefined
         || prev.getMonth() != now.getMonth()
         || prev.getDate() != now.getDate()) {
-
-        const article_up_id = '672840385';
-        const expect_title = `光遇国服每日任务蜡烛位置(${now.getMonth() + 1}月${now.getDate()}日)`;
-
-        await ArticleMeta.fetch(article_up_id, (article: IArticleMeta) => article.title == expect_title).then(
-            (article: IArticleMeta) => {
-                const id = article.id.toString();
-                Article.fetch(id).then(
-                    (root: HTMLElement) => {
-                        parseTodayArticle2Cache(root);
-                        console.log('sky: parsed succeed.');
-                    },
-                    (reason) => {
-                        console.error(`sky: Failed in fetch article because ${reason}`);
-                    }
-                );
-            },
-            (reason) => {
-                console.error(`sky: Failed in fetch article meta because ${reason}`);
-            }
-        );
+        bilibili_update().catch((reason: any) => {
+            report_error(bot, reason);
+        });
     }
 }
 
 function CheckUpdateEntry(msg: CommonMessageEventData): void {
-    CheckUpdate();
-
-    SkyEntry(msg);
+    CheckUpdate().finally(
+        () => SkyEntry(msg)
+    );
 }
 
 const UpdateJob = schedule.scheduleJob('sky163_update', '* 0 * * * *', () => {

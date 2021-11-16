@@ -1,4 +1,5 @@
-import { CommonMessageEventData, MessageElem, Ret, RetSuccess, Sendable } from "oicq";
+import { Client, CommonMessageEventData, MessageElem, Ret, RetSuccess, Sendable } from "oicq";
+import { master } from "../config";
 
 export class DefaultSuccess<T> implements RetSuccess<T> {
     retcode: 0 = 0;
@@ -39,4 +40,8 @@ export class DebugCommonMessageEventData implements CommonMessageEventData {
 
 export function make_message(content: string): CommonMessageEventData {
     return new DebugCommonMessageEventData(content);
+}
+
+export function report_error(bot: Client, error: string) {
+    bot.sendPrivateMsg(master, `Error: ${error}`);
 }

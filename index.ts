@@ -21,6 +21,7 @@ if (use_pwd && pwd_md5 !== null) {
 }
 
 import './plugins/hello';
+import './plugins/repeat';
 import './plugins/echo';
 import './plugins/request';
 import './plugins/online';
