@@ -3,6 +3,7 @@ ENTRYPOINT []
 
 WORKDIR /root/tiochan/
 
+
 RUN sed -i s@/deb.debian.org/@/mirrors.cloud.tencent.com/@g /etc/apt/sources.list && \
     sed -i s@/security.debian.org/@/mirrors.cloud.tencent.com/@g /etc/apt/sources.list && \
     apt-get update && \
@@ -16,9 +17,12 @@ RUN npm config set registry http://mirrors.cloud.tencent.com/npm/ && \
     npm install -g n && \
     n lts && \
     export PATH="$PATH"
-
+    
 RUN npm install -g typescript && \
     npm install -g ts-node
+
+RUN /bin/cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \ 
+    echo 'Asia/Shanghai' > /etc/timezone
 
 COPY . .
 

@@ -1,7 +1,7 @@
 import { Article, ArticleMeta, IArticleMeta } from '../utils/bilibili_article_helper';
 
 import schedule from 'node-schedule';
-import dateformat from 'date-fns/format';
+import _dateformat from 'date-fns/format';
 
 import { parse, HTMLElement } from 'node-html-parser';
 import { segment, cqcode, CommonMessageEventData, PrivateMessageEventData, GroupMessageEventData } from 'oicq';
@@ -10,10 +10,9 @@ import { bot } from '..';
 import { master } from '../config';
 import { LocalStorage } from 'node-localstorage';
 import { report_error } from '../utils/debug_message';
+import { zhCN, ru } from 'date-fns/locale';
 
 const ls_key = 'sky163';
-
-
 
 class ImageShowData {
     title: string | undefined = undefined;
@@ -27,6 +26,12 @@ class DailyContent {
     tasks: ImageShowData | undefined = undefined;
 }
 
+function dateformat(date: number, format: string) {
+    const date_zh = new Date(date);
+    date_zh.setUTCHours(date_zh.getHours() + 8);
+    return _dateformat(date_zh, format);
+    // return _dateformat(date, format, { locale: zhCN});
+}
 
 const CACHE_DIR = './data/cache';
 
@@ -173,7 +178,7 @@ function SkyEntry(msg: CommonMessageEventData): void {
 async function bilibili_update() {
     const now: Date = new Date(Date.now());
     const bilibili_article_up_id = '672840385';
-    const expect_title = `光遇国服每日任务蜡烛位置(${now.getMonth() + 1}月${now.getDate()}日)`;
+    const expect_title = `光遇国服每日任务蜡烛位置(${now.getUTCMonth() + 1}月${now.getUTCDate()}日)`;
 
     return ArticleMeta.fetch(bilibili_article_up_id, (article: IArticleMeta) => article.title == expect_title).then(
         (article: IArticleMeta) => {
@@ -198,8 +203,8 @@ async function CheckUpdate() {
     const prev: Date = new Date(cached_data.date);
     const now: Date = new Date(Date.now());
     if (cached_data.daily_content.tasks === undefined
-        || prev.getMonth() != now.getMonth()
-        || prev.getDate() != now.getDate()) {
+        || prev.getUTCMonth() != now.getUTCMonth()
+        || prev.getUTCDate() != now.getUTCDate()) {
         bilibili_update().catch((reason: any) => {
             report_error(bot, reason);
         });

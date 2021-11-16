@@ -9,7 +9,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "docker:build": "docker build -t tiochan . -f build/Dockerfile",
     "docker:run": "docker run -it tiochan",
-    "docker:deploy": "docker run -d tiochan"
+    "docker:deploy": "docker run -d --name tiochan -v /etc/localtime:/etc/localtime:ro --mount type=bind,source=$(pwd)/data,target=/root/tiochan/data tiochan",
+    "docker:cleanstop": "docker rm $(docker ps --filter status=exited -q)"
   },
   "repository": {
     "type": "git",
