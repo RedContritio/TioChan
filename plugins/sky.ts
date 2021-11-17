@@ -11,8 +11,12 @@ import { master } from '../config';
 import { LocalStorage } from 'node-localstorage';
 import { report_error } from '../utils/debug_message';
 import { zhCN, ru } from 'date-fns/locale';
+import { CacheData, get_cache as _get_cache, remove_cache, set_cache } from '../utils/cache';
 
 const ls_key = 'sky163';
+const cache_key = {
+    bilibili: 'sky163_bilibili'
+};
 
 class ImageShowData {
     title: string | undefined = undefined;
@@ -33,23 +37,12 @@ function dateformat(date: number, format: string) {
     // return _dateformat(date, format, { locale: zhCN});
 }
 
-const CACHE_DIR = './data/cache';
-
-const storage: LocalStorage = new LocalStorage(CACHE_DIR);
-
-class CachedData {
-    date: number = 0;
-    daily_content: DailyContent = new DailyContent();
+class DailyCacheData implements CacheData {
+    data: DailyContent = new DailyContent();
+    datetime: number = 0;
 }
 
-function InitialCacheRead(): CachedData {
-    const s = storage.getItem(ls_key);
-    if (s == null)
-        return new CachedData();
-    return JSON.parse(s);
-}
-
-let cached_data: CachedData = InitialCacheRead();
+const get_bilibili_cache = () => _get_cache(cache_key.bilibili, new DailyCacheData());
 
 const config = {
     article_up_id: '672840385',
@@ -76,66 +69,96 @@ function parseTodayArticle2Cache(root: HTMLElement): boolean {
     const Tasks = figures?.filter((element: HTMLElement) => get_figcaption_text(element)?.includes('今日任务'));
 
     if (Tasks != null && Tasks.length >= 1) {
-        cached_data = new CachedData();
+        const cached_data = new DailyCacheData();
 
-        cached_data.daily_content.randomCakes = undefined;
-        cached_data.daily_content.seasonCandle = undefined;
-        cached_data.daily_content.tasks = undefined;
-        cached_data.daily_content.constCakes = undefined;
+        cached_data.data.randomCakes = undefined;
+        cached_data.data.seasonCandle = undefined;
+        cached_data.data.tasks = undefined;
+        cached_data.data.constCakes = undefined;
 
-        cached_data.daily_content.randomCakes = CandlesCake?.map(figure2imagedata);
+        cached_data.data.randomCakes = CandlesCake?.map(figure2imagedata);
         if (constCake && constCake.length > 0)
-            cached_data.daily_content.constCakes = constCake[0].text.slice(2);
+            cached_data.data.constCakes = constCake[0].text.slice(2);
         if (SeasonCandle && SeasonCandle.length > 0)
-            cached_data.daily_content.seasonCandle = figure2imagedata(SeasonCandle[0]);
+            cached_data.data.seasonCandle = figure2imagedata(SeasonCandle[0]);
         if (Tasks && Tasks.length > 0)
-            cached_data.daily_content.tasks = figure2imagedata(Tasks[0]);
+            cached_data.data.tasks = figure2imagedata(Tasks[0]);
 
-        cached_data.date = Date.now();
+        cached_data.datetime = Date.now();
 
-        storage.setItem(ls_key, JSON.stringify(cached_data));
+        set_cache(cache_key.bilibili, cached_data);
+        // console.log('parsed');
         return true;
     }
     return false;
 }
 
 function replyCakes(msg: CommonMessageEventData): void {
-    let rep = '';
-    if (cached_data.daily_content.constCakes) {
-        rep += dateformat(cached_data.date, 'MM月dd日') + '\n';
-        rep += cached_data.daily_content.constCakes + '\n';
-        cached_data.daily_content.randomCakes?.forEach((cake: ImageShowData) => {
-            rep += '\n';
-            rep += cake.title;
-            rep += cqcode.image('http:' + cake.url);
-        });
-    }
-    msg.reply(rep);
+    CheckUpdate().then(
+        () => {
+            const cached_data = get_bilibili_cache();
+            let rep = '';
+            msg.reply('正在查找缓存...');
+
+            if (cached_data.data.constCakes) {
+                rep += dateformat(cached_data.datetime, 'MM月dd日') + '\n';
+                rep += cached_data.data.constCakes + '\n';
+                cached_data.data.randomCakes?.forEach((cake: ImageShowData) => {
+                    rep += '\n';
+                    rep += cake.title;
+                    rep += cqcode.image('http:' + cake.url);
+                });
+            }
+            msg.reply(rep);
+        }
+    ).catch(
+        (reason: any) => report_error(bot, reason)
+    );
 }
 
 function replySeasonCandle(msg: CommonMessageEventData): void {
-    let rep = '';
-    if (cached_data.daily_content.seasonCandle) {
-        rep += dateformat(cached_data.date, 'MM月dd日') + '\n';
-        rep += cached_data.daily_content.seasonCandle.title;
-        rep += cqcode.image('http:' + cached_data.daily_content.seasonCandle.url);
-    }
-    msg.reply(rep);
+    CheckUpdate().then(
+        () => {
+            const cached_data = get_bilibili_cache();
+            let rep = '';
+            msg.reply('正在查找缓存...');
+
+            if (cached_data.data.seasonCandle) {
+                rep += dateformat(cached_data.datetime, 'MM月dd日') + '\n';
+                rep += cached_data.data.seasonCandle.title;
+                rep += cqcode.image('http:' + cached_data.data.seasonCandle.url);
+            }
+            msg.reply(rep);
+        }
+    ).catch(
+        (reason: any) => report_error(bot, reason)
+    );
 }
 
 function replyTasks(msg: CommonMessageEventData): void {
-    let rep = '';
-    if (cached_data.daily_content.tasks) {
-        rep += dateformat(cached_data.date, 'MM月dd日') + '\n';
-        rep += cached_data.daily_content.tasks.title;
-        rep += cqcode.image('http:' + cached_data.daily_content.tasks.url);
-    }
-    msg.reply(rep);
+    CheckUpdate().then(
+        () => {
+            const cached_data = get_bilibili_cache();
+            let rep = '';
+            msg.reply('正在查找缓存...');
+
+            if (cached_data.data.tasks) {
+                rep += dateformat(cached_data.datetime, 'MM月dd日') + '\n';
+                rep += cached_data.data.tasks.title;
+                rep += cqcode.image('http:' + cached_data.data.tasks.url);
+            }
+            msg.reply(rep);
+        }
+    ).catch(
+        (reason: any) => report_error(bot, reason)
+    );
+    
 }
 
 function replyHelp(msg: CommonMessageEventData): void {
-    const { date } = cached_data; 
-    const timestr = dateformat(date, 'yyyy-MM-dd HH:mm:ss');
+    const cached_data = get_bilibili_cache();
+    const { datetime } = cached_data; 
+    const timestr = dateformat(datetime, 'yyyy-MM-dd HH:mm:ss');
     const rep =
 `是光遇小助手缇欧哒！
 说“#光遇”即可唤醒；
@@ -151,6 +174,7 @@ function replyHelp(msg: CommonMessageEventData): void {
 
 function SkyEntry(msg: CommonMessageEventData): void {
     const content: string = msg.raw_message;
+
     try {
         if (content.includes('#光遇')) {
             if (content.includes('#大蜡烛') || content.includes('#蜡烛堆')) {
@@ -163,15 +187,23 @@ function SkyEntry(msg: CommonMessageEventData): void {
                 replyTasks(msg);
             }
             else if (content.includes('#强制更新') || content.includes('#更新')) {
-                cached_data = InitialCacheRead();
-                CheckUpdate();
+                msg.reply('@_@ 开始强制更新');
+                remove_cache(cache_key.bilibili);
+                CheckUpdate().then(
+                    () => msg.reply('更新完成')
+                ).catch(
+                    (e) => {
+                        report_error(bot, e);
+                        msg.reply('TAT 更新失败，之后再来看看吧');
+                    }
+                );
             }
             else {
                 replyHelp(msg);
             }
         }
     } catch (exception) {
-        msg.reply(`[Exception]\n${exception}`);
+        report_error(bot, exception);
     }
 }
 
@@ -180,7 +212,7 @@ async function bilibili_update() {
     const bilibili_article_up_id = '672840385';
     const expect_title = `光遇国服每日任务蜡烛位置(${dateformat(Date.now(), 'MM月dd日')})`;
 
-    console.log(expect_title);
+    // console.log(expect_title);
 
     return ArticleMeta.fetch(bilibili_article_up_id, (article: IArticleMeta) => article.title == expect_title).then(
         (article: IArticleMeta) => {
@@ -188,50 +220,53 @@ async function bilibili_update() {
             Article.fetch(id).then(
                 (root: HTMLElement) => {
                     parseTodayArticle2Cache(root);
-                    console.log('sky: parsed succeed.');
+                    // console.log('sky: parsed succeed.');
                 },
                 (reason) => {
-                    console.error(`sky: Failed in fetch article because ${reason}`);
+                    report_error(bot, reason);
                 }
             );
         },
         (reason) => {
-            console.error(`sky: Failed in fetch article meta because ${reason}`);
+            report_error(bot, reason);
         }
     );
 }
 
-async function CheckUpdate() {
-    const prev: Date = new Date(cached_data.date);
-    const now: Date = new Date(Date.now());
-    if (cached_data.daily_content.tasks === undefined
-        || prev.getUTCMonth() != now.getUTCMonth()
-        || prev.getUTCDate() != now.getUTCDate()) {
-        bilibili_update().catch((reason: any) => {
-            console.log(reason);
-            report_error(bot, reason);
-        });
-    }
+async function CheckUpdate(): Promise<void> {
+    return new Promise(
+        (resolve, reject) => {
+            const cached_data = get_bilibili_cache();
+            const prev: Date = new Date(cached_data.datetime);
+            const now: Date = new Date(Date.now());
+            if (cached_data.data.tasks === undefined
+                || prev.getUTCMonth() != now.getUTCMonth()
+                || prev.getUTCDate() != now.getUTCDate()) {
+                bilibili_update().then(
+                    (v) => resolve(v),
+                    (r) => reject(r)
+                );
+            } else {
+                resolve();
+                // console.log('resolved');
+            }
+        }
+    )
 }
 
-function CheckUpdateEntry(msg: CommonMessageEventData): void {
-    CheckUpdate().finally(
-        () => SkyEntry(msg)
-    );
-}
 
 const UpdateJob = schedule.scheduleJob('sky163_update', '* 0 * * * *', () => {
     CheckUpdate();
 });
 
 bot.on('message.private', function (msg: PrivateMessageEventData) {
-    CheckUpdateEntry(msg);
+    SkyEntry(msg);
 });
 
 
 bot.on("message.group", function (msg: GroupMessageEventData) {
     if (get_group_switch(msg.group_id, ls_key) === true) {
-        CheckUpdateEntry(msg);
+        SkyEntry(msg);
     }
     if (msg.sender.user_id == master) {
         const content: string = msg.raw_message;

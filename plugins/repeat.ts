@@ -34,7 +34,7 @@ function repeat_once(msg: PrivateMessageEventData | GroupMessageEventData) {
 
         set_friend_data(msg.user_id, ls_key, data);
     } catch (e) {
-        report_error(bot, `Error in repeat: ${e}`);
+        report_error(bot, e);
     }
 }
 

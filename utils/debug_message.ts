@@ -42,6 +42,9 @@ export function make_message(content: string): CommonMessageEventData {
     return new DebugCommonMessageEventData(content);
 }
 
-export function report_error(bot: Client, error: string) {
-    bot.sendPrivateMsg(master, `Error: ${error}`);
+export function report_error(bot: Client, error: any) {
+    console.log(error)
+    bot.sendPrivateMsg(master, `Error: ${error}`).catch(
+        (r: any) => bot.sendPrivateMsg(master, `${r}`)
+    );
 }
