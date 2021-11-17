@@ -1,28 +1,22 @@
-FROM buildpack-deps:buster 
+FROM node:alpine
 ENTRYPOINT []
 
 WORKDIR /root/tiochan/
 
-
-RUN sed -i s@/deb.debian.org/@/mirrors.cloud.tencent.com/@g /etc/apt/sources.list && \
-    sed -i s@/security.debian.org/@/mirrors.cloud.tencent.com/@g /etc/apt/sources.list && \
-    apt-get update && \
-    apt-get install -qq -y nodejs && \
-    apt-get install -qq -y npm
-
 # 无敌，腾讯云 https://mirrors.cloud.tencent.com/
 ENV N_NODE_MIRROR=https://mirrors.cloud.tencent.com/nodejs-release/
 
-RUN npm config set registry http://mirrors.cloud.tencent.com/npm/ && \
-    npm install -g n && \
-    n lts && \
-    export PATH="$PATH"
+# 换源
+RUN sed -i s@/dl-cdn.alpinelinux.org/@/mirrors.cloud.tencent.com/@g /etc/apk/repositories && \
+    npm config set registry http://mirrors.cloud.tencent.com/npm/
+
+# 设置时区
+RUN apk add tzdata && \
+    cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+    echo "Asia/Shanghai" > /etc/timezone
     
 RUN npm install -g typescript && \
     npm install -g ts-node
-
-RUN /bin/cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \ 
-    echo 'Asia/Shanghai' > /etc/timezone
 
 COPY . .
 

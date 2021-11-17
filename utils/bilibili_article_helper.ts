@@ -147,6 +147,8 @@ export class ArticleMeta {
                 const { articles } = data;
                 const valid = articles == null ? [] : articles.filter(predicate);
 
+                if(valid.length == 0)
+                    throw `no valid articles found in ${url}`;
                 return valid[0];
             }
         );

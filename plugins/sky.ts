@@ -28,7 +28,7 @@ class DailyContent {
 
 function dateformat(date: number, format: string) {
     const date_zh = new Date(date);
-    date_zh.setUTCHours(date_zh.getHours() + 8);
+    date_zh.setHours(date_zh.getUTCHours() + 8);
     return _dateformat(date_zh, format);
     // return _dateformat(date, format, { locale: zhCN});
 }
@@ -163,7 +163,7 @@ function SkyEntry(msg: CommonMessageEventData): void {
                 replyTasks(msg);
             }
             else if (content.includes('#强制更新') || content.includes('#更新')) {
-                cached_data.daily_content.tasks = undefined;
+                cached_data = InitialCacheRead();
                 CheckUpdate();
             }
             else {
@@ -178,7 +178,9 @@ function SkyEntry(msg: CommonMessageEventData): void {
 async function bilibili_update() {
     const now: Date = new Date(Date.now());
     const bilibili_article_up_id = '672840385';
-    const expect_title = `光遇国服每日任务蜡烛位置(${now.getUTCMonth() + 1}月${now.getUTCDate()}日)`;
+    const expect_title = `光遇国服每日任务蜡烛位置(${dateformat(Date.now(), 'MM月dd日')})`;
+
+    console.log(expect_title);
 
     return ArticleMeta.fetch(bilibili_article_up_id, (article: IArticleMeta) => article.title == expect_title).then(
         (article: IArticleMeta) => {
@@ -206,6 +208,7 @@ async function CheckUpdate() {
         || prev.getUTCMonth() != now.getUTCMonth()
         || prev.getUTCDate() != now.getUTCDate()) {
         bilibili_update().catch((reason: any) => {
+            console.log(reason);
             report_error(bot, reason);
         });
     }

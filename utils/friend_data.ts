@@ -24,5 +24,5 @@ export function set_friend_data(friend_uin: number, key: string, state: any): vo
     dict[key] = state;
 
     storage.setItem(friend_uin.toString(), JSON.stringify(dict));
-    console.log(safe_get_friend_data(friend_uin));
+    // console.log(safe_get_friend_data(friend_uin));
 }
