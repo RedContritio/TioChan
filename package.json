@@ -31,7 +31,8 @@
     "node-localstorage": "^2.2.1",
     "node-schedule": "^2.0.0",
     "oicq": "^1.21.2",
-    "request": "^2.88.2"
+    "request": "^2.88.2",
+    "vm2": "^3.9.5"
   },
   "devDependencies": {
     "@types/md5": "^2.3.1",
