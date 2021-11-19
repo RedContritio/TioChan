@@ -93,66 +93,47 @@ function parseTodayArticle2Cache(root: HTMLElement): boolean {
     return false;
 }
 
-function replyCakes(msg: CommonMessageEventData): void {
-    CheckUpdate().then(
-        () => {
-            const cached_data = get_bilibili_cache();
-            let rep = '';
-            msg.reply('正在查找缓存...');
-
-            if (cached_data.data.constCakes) {
-                rep += dateformat(cached_data.datetime, 'MM月dd日') + '\n';
-                rep += cached_data.data.constCakes + '\n';
-                cached_data.data.randomCakes?.forEach((cake: ImageShowData) => {
-                    rep += '\n';
-                    rep += cake.title;
-                    rep += cqcode.image('http:' + cake.url);
-                });
-            }
-            msg.reply(rep);
-        }
-    ).catch(
-        (reason: any) => report_error(bot, reason)
-    );
+async function replyCakes(msg: CommonMessageEventData) {
+    await CheckUpdate();
+    const cached_data = get_bilibili_cache();
+    let rep = '';
+    msg.reply('正在查找缓存...');
+    if (cached_data.data.constCakes) {
+        rep += dateformat(cached_data.datetime, 'MM月dd日') + '\n';
+        rep += cached_data.data.constCakes + '\n';
+        cached_data.data.randomCakes?.forEach((cake: ImageShowData) => {
+            rep += '\n';
+            rep += cake.title;
+            rep += cqcode.image('http:' + cake.url);
+        });
+    }
+    msg.reply(rep);
 }
 
-function replySeasonCandle(msg: CommonMessageEventData): void {
-    CheckUpdate().then(
-        () => {
-            const cached_data = get_bilibili_cache();
-            let rep = '';
-            msg.reply('正在查找缓存...');
-
-            if (cached_data.data.seasonCandle) {
-                rep += dateformat(cached_data.datetime, 'MM月dd日') + '\n';
-                rep += cached_data.data.seasonCandle.title;
-                rep += cqcode.image('http:' + cached_data.data.seasonCandle.url);
-            }
-            msg.reply(rep);
-        }
-    ).catch(
-        (reason: any) => report_error(bot, reason)
-    );
+async function replySeasonCandle(msg: CommonMessageEventData) {
+    await CheckUpdate();
+    const cached_data = get_bilibili_cache();
+    let rep = '';
+    msg.reply('正在查找缓存...');
+    if (cached_data.data.seasonCandle) {
+        rep += dateformat(cached_data.datetime, 'MM月dd日') + '\n';
+        rep += cached_data.data.seasonCandle.title;
+        rep += cqcode.image('http:' + cached_data.data.seasonCandle.url);
+    }
+    msg.reply(rep);
 }
 
-function replyTasks(msg: CommonMessageEventData): void {
-    CheckUpdate().then(
-        () => {
-            const cached_data = get_bilibili_cache();
-            let rep = '';
-            msg.reply('正在查找缓存...');
-
-            if (cached_data.data.tasks) {
-                rep += dateformat(cached_data.datetime, 'MM月dd日') + '\n';
-                rep += cached_data.data.tasks.title;
-                rep += cqcode.image('http:' + cached_data.data.tasks.url);
-            }
-            msg.reply(rep);
-        }
-    ).catch(
-        (reason: any) => report_error(bot, reason)
-    );
-    
+async function replyTasks(msg: CommonMessageEventData) {
+    await CheckUpdate();
+    const cached_data = get_bilibili_cache();
+    let rep = '';
+    msg.reply('正在查找缓存...');
+    if (cached_data.data.tasks) {
+        rep += dateformat(cached_data.datetime, 'MM月dd日') + '\n';
+        rep += cached_data.data.tasks.title;
+        rep += cqcode.image('http:' + cached_data.data.tasks.url);
+    }
+    msg.reply(rep);
 }
 
 function replyHelp(msg: CommonMessageEventData): void {
@@ -178,25 +159,20 @@ function SkyEntry(msg: CommonMessageEventData): void {
     try {
         if (content.includes('#光遇')) {
             if (content.includes('#大蜡烛') || content.includes('#蜡烛堆')) {
-                replyCakes(msg);
+                replyCakes(msg).catch((reason) => report_error(bot, reason));
             }
             else if (content.includes('#季节蜡烛') || content.includes('#季蜡')) {
-                replySeasonCandle(msg);
+                replySeasonCandle(msg).catch((reason) => report_error(bot, reason));
             }
             else if (content.includes('#每日任务') || content.includes('#任务') || content.includes('#今日任务')) {
-                replyTasks(msg);
+                replyTasks(msg).catch((reason) => report_error(bot, reason));
             }
             else if (content.includes('#强制更新') || content.includes('#更新')) {
                 msg.reply('@_@ 开始强制更新');
                 remove_cache(cache_key.bilibili);
                 CheckUpdate().then(
                     () => msg.reply('更新完成')
-                ).catch(
-                    (e) => {
-                        report_error(bot, e);
-                        msg.reply('TAT 更新失败，之后再来看看吧');
-                    }
-                );
+                ).catch((reason) => report_error(bot, reason));
             }
             else {
                 replyHelp(msg);
@@ -221,14 +197,8 @@ async function bilibili_update() {
                 (root: HTMLElement) => {
                     parseTodayArticle2Cache(root);
                     // console.log('sky: parsed succeed.');
-                },
-                (reason) => {
-                    report_error(bot, reason);
                 }
             );
-        },
-        (reason) => {
-            report_error(bot, reason);
         }
     );
 }
