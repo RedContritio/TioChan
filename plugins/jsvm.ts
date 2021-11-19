@@ -34,13 +34,14 @@ async function jsvm(code: string, print: (obj: string) => void, ret: (v: any) =>
 
 function jsvmEntry(msg: PrivateMessageEventData | GroupMessageEventData) {
     try {
+        // console.log(msg);
         const content: string = msg.raw_message;
-        const lines: string[] = content.split('\n');
+        const lines: string[] = content.split(/\r|\n/);
         let output: string = "";
         let retv: string = "";
         if(lines[0] === ':vm js') {
             const code = lines.slice(1).join('\n');
-	    // console.log(code);
+	        // console.log(code);
             jsvm(code,
                 (s: string) => {
                     output = `${output}\n${s}`;
@@ -50,12 +51,10 @@ function jsvmEntry(msg: PrivateMessageEventData | GroupMessageEventData) {
                 }).then(() => {
 		// msg.reply(`输出：${output}\n返回值：${retv}`);
                     msg.reply(`输出：${output}`);
-                }).catch((r) => {
-                    msg.reply(`异常：\n${r}`);
-                    report_error(bot, r);
-                });
+                })
         }
     } catch (e) {
+        msg.reply(`异常：\n${e}`);
         report_error(bot, e);
     }
 }
