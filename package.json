@@ -11,7 +11,8 @@
     "docker:run": "docker run -it tiochan",
     "docker:deploy": "docker run -d --name tiochan -v /etc/localtime:/etc/localtime:ro --mount type=bind,source=$(pwd)/data,target=/root/tiochan/data tiochan",
     "docker:clear": "docker rm $(docker ps --filter status=exited -q)",
-    "docker:clear-images": "docker rmi -f $(docker images -aq)"
+    "docker:clear-image": "docker rmi $(docker images 'tiochan' -a -q)",
+    "docker:clear-all-images": "docker rmi -f $(docker images -aq)"
   },
   "repository": {
     "type": "git",
