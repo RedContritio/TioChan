@@ -2,8 +2,10 @@ import { CommonMessageEventData, GroupMessageEventData, PrivateMessageEventData,
 import { bot } from "../index";
 import { master } from "../config";
 import { get_group_switch, set_group_switch } from "../utils/group_switch";
+import { get_friend_data, set_friend_data } from "../utils/friend_data";
 
 const ls_key = 'group_echo';
+const COOLDOWN: number = 1000; // ms
 
 const echo_match = (s: string) => {
     return s.slice(5);
@@ -11,8 +13,15 @@ const echo_match = (s: string) => {
 
 function echo(msg: CommonMessageEventData) {
     const text = msg.raw_message;
-    if (text.startsWith("echo "))
-        msg.reply(text.slice(5));
+    const prev: number = get_friend_data(msg.user_id, ls_key, 0);
+    // Timestamp / ms
+    const cur: number = Date.now();
+    if (text.startsWith("echo ")) {
+        if(cur - prev >= COOLDOWN) {
+            msg.reply(text.slice(5));
+            set_friend_data(msg.user_id, ls_key, cur);
+        }
+    }
 }
 
 // 私聊 echo
