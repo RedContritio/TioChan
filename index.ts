@@ -28,7 +28,9 @@ import './plugins/online';
 import './plugins/sky';
 import './plugins/poke';
 import './plugins/jsvm';
+import { report_error } from "./utils/debug_message";
 
 process.on("unhandledRejection", (reason, promise) => {
-	console.log('Unhandled Rejection at:', promise, 'reason:', reason)
+	console.log('Unhandled Rejection at:', promise, 'reason:', reason);
+	report_error(bot, reason);
 });

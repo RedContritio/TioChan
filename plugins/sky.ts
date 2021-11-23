@@ -226,7 +226,7 @@ async function CheckUpdate(): Promise<void> {
 
 
 const UpdateJob = schedule.scheduleJob('sky163_update', '* 0 * * * *', () => {
-    CheckUpdate();
+    CheckUpdate().catch((r) => report_error(bot, r));
 });
 
 bot.on('message.private', function (msg: PrivateMessageEventData) {
