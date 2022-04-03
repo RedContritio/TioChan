@@ -20,8 +20,6 @@ export class TopicCard {
     static async fetch(topic: string, predicate: (content: ITopicCard) => boolean): Promise<ITopicCard[]> {
         const url = encodeURI(`${config.topic_prefix}${topic}/`);
 
-        console.log(url);
-
         return new Promise((resolve, reject) => fetch_page(url).then(
             (root: HTMLElement) => {
                 const cards = root.querySelectorAll('.feed-card');
@@ -67,23 +65,24 @@ export class Article {
             ps?.forEach((p: HTMLElement) => {
                 if (p.text.includes('任务攻略')) {
                     state = 'task';
-                } else if (p.text.startsWith('大蜡攻略')) {
+                } else if (p.text.includes('大蜡攻略')) {
                     state = 'cake';
-                } else if (p.text.startsWith('季节烛火攻略')) {
+                } else if (p.text.includes('季节烛火攻略')) {
                     state = 'season';
                 } else {
                     const img = p.querySelector('img')?.attrs.src;
                     switch (state) {
                         case 'task':
-                            tasks.push(p.text);
+                            if(p.text.length > 0)
+                                tasks.push(p.text + `${p.text.length}`);
                             break;
                         case 'cake':
-                            if(img) {
-
-                            }
-                            cake_url = p.querySelector('a')?.attrs.href;
+                            if(img)
+                                cake_urls.push(img);
                             break;
                         case 'season':
+                            if(img)
+                                season_urls.push(img);
                             break;
                         default:
                             break;
@@ -91,7 +90,11 @@ export class Article {
                 }
             })
 
-            console.log(article_card?.textContent)
+            resolve({
+                tasks,
+                cake_urls,
+                season_urls
+            });
         }));
     }
 }

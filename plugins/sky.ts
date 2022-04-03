@@ -10,7 +10,7 @@ import { LocalStorage } from 'node-localstorage';
 import { report_error } from '../utils/debug_message';
 import { zhCN, ru } from 'date-fns/locale';
 import { CacheData, get_cache as _get_cache, remove_cache, set_cache } from '../utils/cache';
-import { Article, ITopicCard, TopicCard } from '../utils/ds163_helper';
+import { Article, IArticle, ITopicCard, TopicCard } from '../utils/ds163_helper';
 
 const ls_key = 'sky163';
 const cache_key = {
@@ -20,14 +20,19 @@ const cache_key = {
 
 class ImageShowData {
     title: string | undefined = undefined;
-    url: string | undefined = undefined;
+    url: string;
+
+    constructor(url: string) {
+        this.url = url;
+    }
 };
 
 class DailyContent {
-    constCakes: string | undefined = undefined;
-    randomCakes: ImageShowData[] | undefined = undefined;
-    seasonCandle: ImageShowData | undefined = undefined;
-    tasks: string | undefined = undefined;
+    cakes: ImageShowData[] = [];
+    // constCakes: string | undefined = undefined;
+    // randomCakes: ImageShowData[] | undefined = undefined;
+    seasonCandles: ImageShowData[] | undefined = undefined;
+    tasks: string[] = [];
 }
 
 function dateformat(date: number, format: string) {
@@ -51,76 +56,39 @@ const config = {
     article_url_prefix: 'https://www.bilibili.com/read/cv',
 };
 
-// function parseTodayArticle2Cache(root: HTMLElement): boolean {
-//     const get_figcaption_text = (e: HTMLElement) => e.querySelector('figcaption')?.text;
-//     const figure2imagedata = (e: HTMLElement): ImageShowData => {
-//         const showdata = new ImageShowData();
-//         showdata.title = get_figcaption_text(e);
-//         showdata.url = e.querySelector('img')?.getAttribute('data-src')
-//         return showdata;
-//     };
-
-//     const article = root.querySelector('#article-content');
-
-//     const constCake = article?.querySelectorAll('p').filter((e: HTMLElement) => e.text.includes('固定位置'));
-//     const figures = article?.querySelectorAll('figure');
-
-//     const CandlesCake = figures?.filter((element: HTMLElement) => get_figcaption_text(element)?.includes('蜡烛堆'));
-//     const SeasonCandle = figures?.filter((element: HTMLElement) => get_figcaption_text(element)?.includes('季节蜡烛'));
-//     const Tasks = figures?.filter((element: HTMLElement) => get_figcaption_text(element)?.includes('今日任务'));
-
-//     if (Tasks != null && Tasks.length >= 1) {
-//         const cached_data = new DailyCacheData();
-
-//         cached_data.data.randomCakes = undefined;
-//         cached_data.data.seasonCandle = undefined;
-//         cached_data.data.tasks = undefined;
-//         cached_data.data.constCakes = undefined;
-
-//         cached_data.data.randomCakes = CandlesCake?.map(figure2imagedata);
-//         if (constCake && constCake.length > 0)
-//             cached_data.data.constCakes = constCake[0].text.slice(2);
-//         if (SeasonCandle && SeasonCandle.length > 0)
-//             cached_data.data.seasonCandle = figure2imagedata(SeasonCandle[0]);
-//         if (Tasks && Tasks.length > 0)
-//             cached_data.data.tasks = figure2imagedata(Tasks[0]);
-
-//         cached_data.datetime = Date.now();
-
-//         set_cache(cache_key.bilibili, cached_data);
-//         // console.log('parsed');
-//         return true;
-//     }
-//     return false;
-// }
-
 async function replyCakes(msg: CommonMessageEventData) {
     await CheckUpdate();
     const cached_data = get_ds163_cache();
     let rep = '';
     msg.reply('正在查找缓存...');
-    if (cached_data.data.constCakes) {
-        rep += dateformat(cached_data.datetime, 'M月dd日') + '\n';
-        rep += cached_data.data.constCakes + '\n';
-        cached_data.data.randomCakes?.forEach((cake: ImageShowData) => {
-            rep += '\n';
-            rep += cake.title;
-            rep += cqcode.image('http:' + cake.url);
-        });
-    }
+    // if (cached_data.data.cakes) {
+    rep += dateformat(cached_data.datetime, 'M月dd日');
+    // rep += cached_data.data.constCakes + '\n';
+    cached_data.data.cakes.forEach((e: ImageShowData) => {
+        rep += '\n';
+        rep += cqcode.image(e.url);
+    });
+        // cached_data.data.randomCakes?.forEach((cake: ImageShowData) => {
+        //     rep += '\n';
+        //     rep += cake.title;
+        //     rep += cqcode.image('http:' + cake.url);
+        // });
+    // }
     msg.reply(rep);
 }
 
-async function replySeasonCandle(msg: CommonMessageEventData) {
+async function replyseasonCandles(msg: CommonMessageEventData) {
     await CheckUpdate();
     const cached_data = get_ds163_cache();
     let rep = '';
     msg.reply('正在查找缓存...');
-    if (cached_data.data.seasonCandle) {
-        rep += dateformat(cached_data.datetime, 'M月dd日') + '\n';
-        rep += cached_data.data.seasonCandle.title;
-        rep += cqcode.image('http:' + cached_data.data.seasonCandle.url);
-    }
+    // if (cached_data.data.seasonCandles) {
+    rep += dateformat(cached_data.datetime, 'M月dd日');
+    cached_data.data.seasonCandles.forEach((e: ImageShowData) => {
+        rep += '\n';
+        rep += cqcode.image(e.url);
+    });
+    // }
     msg.reply(rep);
 }
 
@@ -129,11 +97,13 @@ async function replyTasks(msg: CommonMessageEventData) {
     const cached_data = get_ds163_cache();
     let rep = '';
     msg.reply('正在查找缓存...');
-    if (cached_data.data.tasks) {
-        rep += dateformat(cached_data.datetime, 'M月dd日') + '\n';
-        rep += cached_data.data.tasks.title;
-        rep += cqcode.image('http:' + cached_data.data.tasks.url);
-    }
+    // if (cached_data.data.tasks) {
+    rep += dateformat(cached_data.datetime, 'M月dd日');
+    cached_data.data.tasks.forEach((e: string) => {
+        rep += '\n';
+        rep += e;
+    });
+    // }
     msg.reply(rep);
 }
 
@@ -163,14 +133,14 @@ function SkyEntry(msg: CommonMessageEventData): void {
                 replyCakes(msg).catch((reason) => report_error(bot, reason));
             }
             else if (content.includes('#季节蜡烛') || content.includes('#季蜡')) {
-                replySeasonCandle(msg).catch((reason) => report_error(bot, reason));
+                replyseasonCandles(msg).catch((reason) => report_error(bot, reason));
             }
             else if (content.includes('#每日任务') || content.includes('#任务') || content.includes('#今日任务')) {
                 replyTasks(msg).catch((reason) => report_error(bot, reason));
             }
             else if (content.includes('#强制更新') || content.includes('#更新')) {
                 msg.reply('@_@ 开始强制更新');
-                remove_cache(cache_key.bilibili);
+                remove_cache(cache_key.ds163);
                 CheckUpdate().then(
                     () => msg.reply('更新完成')
                 ).catch((reason) => report_error(bot, reason));
@@ -183,27 +153,6 @@ function SkyEntry(msg: CommonMessageEventData): void {
         report_error(bot, exception);
     }
 }
-
-// async function bilibili_update() {
-//     const now: Date = new Date(Date.now());
-//     const bilibili_article_up_id = '672840385';
-//     const expect_title = `光遇国服每日任务蜡烛位置(${dateformat(Date.now(), 'M月d日')})`;
-
-//     console.log(expect_title);
-
-//     return ArticleMeta.fetch(bilibili_article_up_id, (article: IArticleMeta) => article.title == expect_title).then(
-//         (article: IArticleMeta) => {
-//             const id = article.id.toString();
-//             Article.fetch(id).then(
-//                 (root: HTMLElement) => {
-//                     parseTodayArticle2Cache(root);
-//                     // console.log('sky: parsed succeed.');
-//                 }
-//             );
-//         }
-//     );
-// }
-
 async function ds163_update() {
     const now: Date = new Date(Date.now());
     const expect_title = dateformat(Date.now(), 'M月d日');
@@ -213,30 +162,17 @@ async function ds163_update() {
     }
 
     return TopicCard.fetch('光遇每日任务攻略', title_predicate).then((cards: ITopicCard[]) => {
-        Article.fetch(cards[0].article_id).then();
+        Article.fetch(cards[0].article_id).then((article: IArticle) => {
+            const cached_data = new DailyCacheData();
+            cached_data.data.tasks = article.tasks;
+            cached_data.data.cakes = article.cake_urls.map((url: string) => new ImageShowData(url));
+            cached_data.data.seasonCandles = article.season_urls.map((url: string) => new ImageShowData(url));
+            cached_data.datetime = Date.now();
+
+            set_cache(cache_key.ds163, cached_data);
+        });
     })
 }
-
-// async function CheckUpdate(): Promise<void> {
-//     return new Promise(
-//         (resolve, reject) => {
-//             const cached_data = get_bilibili_cache();
-//             const prev: Date = new Date(cached_data.datetime);
-//             const now: Date = new Date(Date.now());
-//             if (cached_data.data.tasks === undefined
-//                 || prev.getUTCMonth() != now.getUTCMonth()
-//                 || prev.getUTCDate() != now.getUTCDate()) {
-//                 bilibili_update().then(
-//                     (v) => resolve(v),
-//                     (r) => reject(r)
-//                 );
-//             } else {
-//                 resolve();
-//                 // console.log('resolved');
-//             }
-//         }
-//     )
-// }
 
 async function CheckUpdate(): Promise<void> {
     return new Promise(
