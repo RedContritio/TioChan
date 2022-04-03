@@ -9,9 +9,11 @@ export async function fetch_raw(url: string) : Promise<any> {
                 try {
                     resolve(body);
                 } catch (e) {
+                    console.log(response);
                     reject(e);
                 }
             } else {
+                console.log(error);
                 reject(`${error} ${response.statusCode}`);
             }
         });

@@ -5,7 +5,8 @@ import { get_password_md5 } from "./utils/password";
 export const bot = createClient(uin, login_options)
 // export const bot = createClient(uin)
 // const use_pwd = false;
-const use_pwd = true;
+// const use_pwd = true;
+const use_pwd = false;
 
 const pwd_md5 = get_password_md5('login');
 
